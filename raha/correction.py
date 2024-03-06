@@ -683,7 +683,7 @@ def init_distance_matrix(data):
 
 ########################################
 if __name__ == "__main__":
-    dataset_name = "flights"
+    dataset_name = "synthetic10k"
     dataset_dictionary = {
         "name": dataset_name,
         "path": os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, "datasets", dataset_name, "dirty.csv")),
@@ -694,6 +694,7 @@ if __name__ == "__main__":
     init_distance_matrix(data)
     data.detected_cells = dict(data.get_actual_errors_dictionary())
     app = Correction()
+    app.VERBOSE=True
     correction_dictionary = app.run(data)
     p, r, f = data.get_data_cleaning_evaluation(correction_dictionary)[-3:]
     print("Baran's performance on {}:\nPrecision = {:.2f}\nRecall = {:.2f}\nF1 = {:.2f}".format(data.name, p, r, f))
