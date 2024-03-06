@@ -1,13 +1,15 @@
 import argparse
 import os
+import sys
 import time
 import warnings
 
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
+sys.path.append('..')
 import raha
 from correction import combine_xy, init_distance_matrix
 from raha import Detection, Correction
-
-warnings.simplefilter(action='ignore', category=FutureWarning)
 from eval import do_eval
 
 if __name__ == "__main__":

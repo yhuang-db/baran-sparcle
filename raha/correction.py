@@ -36,6 +36,7 @@ import sklearn.ensemble
 import sklearn.naive_bayes
 import sklearn.linear_model
 
+sys.path.append('..')
 import raha
 
 
@@ -646,7 +647,7 @@ def init_distance_matrix(data):
     """
      create distance matrix via PostGIS
     """
-    engine = create_engine("postgresql://yuchuanhuang@localhost:5432/baran")
+    engine = create_engine("postgresql://yuchuanhuang@localhost:5432/baran_sparcle")
     df = data.dataframe
     df[['x', 'y']] = df['xy'].str.split(' ', expand=True)
     df.to_sql('xy', con=engine, if_exists='replace', index=False)
@@ -683,7 +684,7 @@ def init_distance_matrix(data):
 
 ########################################
 if __name__ == "__main__":
-    dataset_name = "synthetic10k"
+    dataset_name = "synthetic1k"
     dataset_dictionary = {
         "name": dataset_name,
         "path": os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, "datasets", dataset_name, "dirty.csv")),
