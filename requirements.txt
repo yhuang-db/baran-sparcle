@@ -9,3 +9,4 @@ beautifulsoup4==4.6.0
 py7zr==0.7.0
 psycopg
 geoalchemy2
+duckdb
