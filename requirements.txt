@@ -1,5 +1,5 @@
 numpy
-pandas
+pandas==1.5.3
 scipy
 sklearn==0.0
 matplotlib
@@ -7,6 +7,7 @@ prettytable==0.7.2
 mwparserfromhell==0.5.4
 beautifulsoup4==4.6.0
 py7zr==0.7.0
-psycopg
+psycopg2
 geoalchemy2
 duckdb
+sqlalchemy==1.4.52

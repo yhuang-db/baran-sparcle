@@ -64,6 +64,7 @@ class Correction:
         self.MIN_CORRECTION_OCCURRENCE = 2
         self.MAX_VALUE_LENGTH = 50
         self.REVISION_WINDOW_SIZE = 5
+        self.distance_matrix = None
 
     @staticmethod
     def _wikitext_segmenter(wikitext):
@@ -204,13 +205,12 @@ class Correction:
             model[key][value] = 0.0
         model[key][value] += 1.0
 
-    @staticmethod
-    def _sparcle_to_model_adder(model, key, value):
+    def _sparcle_to_model_adder(self, model, key, value):
         """
         Add weight to neighbor locations
         """
         # find neighbors of key point
-        df_neighbors = data.distance_matrix[data.distance_matrix['xy_1'] == key]
+        df_neighbors = self.distance_matrix[self.distance_matrix['xy_1'] == key]
         for neighbor, weight in df_neighbors[['xy_2', 'weight']].values:
             if neighbor not in model:
                 model[neighbor] = {}
@@ -646,7 +646,7 @@ def init_distance_matrix(data):
     """
      create distance matrix via PostGIS
     """
-    engine = create_engine("postgresql+psycopg://yuchuanhuang@localhost:5432/baran")
+    engine = create_engine("postgresql://yuchuanhuang@localhost:5432/baran")
     df = data.dataframe
     df[['x', 'y']] = df['xy'].str.split(' ', expand=True)
     df.to_sql('xy', con=engine, if_exists='replace', index=False)
@@ -678,7 +678,7 @@ def init_distance_matrix(data):
         conn.execute(text(sql_cluster_geom))
         conn.execute(text(sql_drop_dm))
         conn.execute(text(sql_create_dm))
-    data.distance_matrix = pd.read_sql('SELECT * FROM dm', con=engine)
+    return pd.read_sql('SELECT * FROM dm', con=engine)
 
 
 ########################################
@@ -691,10 +691,10 @@ if __name__ == "__main__":
     }
     data = raha.dataset.Dataset(dataset_dictionary)
     combine_xy(data)
-    init_distance_matrix(data)
     data.detected_cells = dict(data.get_actual_errors_dictionary())
     app = Correction()
-    app.VERBOSE=True
+    app.VERBOSE = True
+    app.distance_matrix = init_distance_matrix(data)
     correction_dictionary = app.run(data)
     p, r, f = data.get_data_cleaning_evaluation(correction_dictionary)[-3:]
     print("Baran's performance on {}:\nPrecision = {:.2f}\nRecall = {:.2f}\nF1 = {:.2f}".format(data.name, p, r, f))

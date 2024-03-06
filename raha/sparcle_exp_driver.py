@@ -1,9 +1,11 @@
 import argparse
-import time
 import os
-import raha
-from raha import Detection, Correction
+import time
 import warnings
+
+import raha
+from correction import combine_xy, init_distance_matrix
+from raha import Detection, Correction
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 from eval import do_eval
@@ -26,6 +28,9 @@ if __name__ == "__main__":
         "clean_path": os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, "datasets", dataset_name, "clean.csv"))
     }
     data = raha.dataset.Dataset(dataset_dictionary)
+    combine_xy(data)
+    df_dm = init_distance_matrix(data)
+    print("Done initializing distance matrix")
 
     for counter in range(times):
         # error detection
@@ -41,6 +46,7 @@ if __name__ == "__main__":
         app_correct = Correction()
         app_correct.VERBOSE = True
         app_correct.SAVE_RESULTS = False
+        app_correct.distance_matrix = df_dm
         correction_dictionary = app_correct.run(data)
         p, r, f = data.get_data_cleaning_evaluation(correction_dictionary)[-3:]
         print("Baran's performance on {}:\nPrecision = {:.2f}\nRecall = {:.2f}\nF1 = {:.2f}".format(data.name, p, r, f))
@@ -50,4 +56,4 @@ if __name__ == "__main__":
         end = time.perf_counter()
         runtime = time.strftime("%Hh%Mm%Ss", time.gmtime(end - start))
         output_file = f'{dataset_dictionary["name"]}_eval_{counter}_{runtime}.csv'
-        do_eval(data, dataset_dictionary["eval_attrs"], output_file)
+        do_eval(data, data.dataframe.columns[3:].to_list(), output_file)
