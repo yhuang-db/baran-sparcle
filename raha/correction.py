@@ -7,7 +7,13 @@
 # TU Berlin
 # All Rights Reserved
 ########################################
+import warnings
 
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
+import pandas as pd
+from sqlalchemy import text
+from sqlalchemy import create_engine
 
 ########################################
 import os
@@ -31,6 +37,8 @@ import sklearn.naive_bayes
 import sklearn.linear_model
 
 import raha
+
+
 ########################################
 
 
@@ -46,7 +54,7 @@ class Correction:
         """
         self.PRETRAINED_VALUE_BASED_MODELS_PATH = ""
         self.VALUE_ENCODINGS = ["identity", "unicode"]
-        self.CLASSIFICATION_MODEL = "ABC"   # ["ABC", "DTC", "GBC", "GNB", "KNC" ,"SGDC", "SVC"]
+        self.CLASSIFICATION_MODEL = "ABC"  # ["ABC", "DTC", "GBC", "GNB", "KNC" ,"SGDC", "SVC"]
         self.IGNORE_SIGN = "<<<IGNORE_THIS_VALUE>>>"
         self.VERBOSE = False
         self.SAVE_RESULTS = True
@@ -62,6 +70,7 @@ class Correction:
         """
         This method takes a Wikipedia page revision text in wikitext and segments it recursively.
         """
+
         def recursive_segmenter(node):
             if isinstance(node, str):
                 segments_list.append(node)
@@ -195,6 +204,20 @@ class Correction:
             model[key][value] = 0.0
         model[key][value] += 1.0
 
+    @staticmethod
+    def _sparcle_to_model_adder(model, key, value):
+        """
+        Add weight to neighbor locations
+        """
+        # find neighbors of key point
+        df_neighbors = data.distance_matrix[data.distance_matrix['xy_1'] == key]
+        for neighbor, weight in df_neighbors[['xy_2', 'weight']].values:
+            if neighbor not in model:
+                model[neighbor] = {}
+            if value not in model[neighbor]:
+                model[neighbor][value] = 0
+            model[neighbor][value] += weight
+
     def _value_based_models_updater(self, models, ud):
         """
         This method updates the value-based error corrector models with a given update dictionary.
@@ -230,6 +253,7 @@ class Correction:
         """
         This method pretrains value-based error corrector models.
         """
+
         def _models_pruner():
             for mi, model in enumerate(models):
                 for k in list(model.keys()):
@@ -276,6 +300,8 @@ class Correction:
         for j, cv in enumerate(ud["vicinity"]):
             if cv != self.IGNORE_SIGN:
                 self._to_model_adder(models[j][ud["column"]], cv, ud["new_value"])
+                if j == (len(ud['vicinity']) - 1) and ud['column'] != 0:  # add weight to neighbor locations
+                    self._sparcle_to_model_adder(models[j][ud["column"]], cv, ud["new_value"])
 
     def _domain_based_model_updater(self, model, ud):
         """
@@ -596,7 +622,63 @@ class Correction:
                       "------------------------------------------------------------------------")
             self.store_results(d)
         return d.corrected_cells
+
+
 ########################################
+
+def combine_xy(data):
+    """
+    This method combines column x, y of dataframe
+    """
+
+    def _combine_xy_(df):
+        df["x"] = df["x"].astype(str)
+        df["y"] = df["y"].astype(str)
+        df["xy"] = df["x"] + " " + df["y"]
+        df = df.drop(columns=["x", "y"])
+        return df
+
+    data.dataframe = _combine_xy_(data.dataframe)
+    data.clean_dataframe = _combine_xy_(data.clean_dataframe)
+
+
+def init_distance_matrix(data):
+    """
+     create distance matrix via PostGIS
+    """
+    engine = create_engine("postgresql+psycopg://yuchuanhuang@localhost:5432/baran")
+    df = data.dataframe
+    df[['x', 'y']] = df['xy'].str.split(' ', expand=True)
+    df.to_sql('xy', con=engine, if_exists='replace', index=False)
+    data.dataframe = data.dataframe[data.clean_dataframe.columns]
+    sql_drop_geom = 'DROP TABLE IF EXISTS geom'
+    sql_create_geom = 'CREATE TABLE geom AS SELECT *, ST_MakePoint(x::double precision, y::double precision) AS _geom_ FROM xy'
+    sql_spatial_index = 'CREATE INDEX geom_idx ON geom USING GIST (_geom_)'
+    sql_cluster_geom = 'CLUSTER geom USING geom_idx'
+    dist = 1000
+    factor_n = 1
+    sql_drop_dm = 'DROP TABLE IF EXISTS dm'
+    sql_create_dm = f'''
+    CREATE TABLE dm AS
+    SELECT
+        t1.xy AS xy_1,
+        t2.xy AS xy_2,
+        ST_Distance(t1._geom_, t2._geom_) AS distance,
+        (1 - ST_Distance(t1._geom_, t2._geom_)/{dist})^{factor_n} as weight
+    FROM 
+        geom t1, 
+        geom t2
+    WHERE ST_DWithin(t1._geom_, t2._geom_, {dist})
+      AND t1.xy <> t2.xy
+    '''
+    with engine.begin() as conn:
+        conn.execute(text(sql_drop_geom))
+        conn.execute(text(sql_create_geom))
+        conn.execute(text(sql_spatial_index))
+        conn.execute(text(sql_cluster_geom))
+        conn.execute(text(sql_drop_dm))
+        conn.execute(text(sql_create_dm))
+    data.distance_matrix = pd.read_sql('SELECT * FROM dm', con=engine)
 
 
 ########################################
@@ -608,6 +690,8 @@ if __name__ == "__main__":
         "clean_path": os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, "datasets", dataset_name, "clean.csv"))
     }
     data = raha.dataset.Dataset(dataset_dictionary)
+    combine_xy(data)
+    init_distance_matrix(data)
     data.detected_cells = dict(data.get_actual_errors_dictionary())
     app = Correction()
     correction_dictionary = app.run(data)
