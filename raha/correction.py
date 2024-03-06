@@ -648,6 +648,7 @@ def init_distance_matrix(data):
      create distance matrix via PostGIS
     """
     engine = create_engine("postgresql://yuchuanhuang@localhost:5432/baran_sparcle")
+    # engine = create_engine("postgresql://baranuser:baranpass@localhost:5432/baran_sparcle")
     df = data.dataframe
     df[['x', 'y']] = df['xy'].str.split(' ', expand=True)
     df.to_sql('xy', con=engine, if_exists='replace', index=False)
