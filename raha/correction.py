@@ -14,6 +14,7 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 import pandas as pd
 from sqlalchemy import text
 from sqlalchemy import create_engine
+from tqdm import tqdm
 
 ########################################
 import os
@@ -404,7 +405,7 @@ class Correction:
                 print("The pretrained value-based models are loaded.")
         d.vicinity_models = {j: {jj: {} for jj in range(d.dataframe.shape[1])} for j in range(d.dataframe.shape[1])}
         d.domain_models = {}
-        for row in d.dataframe.itertuples():
+        for row in tqdm(d.dataframe.itertuples()):
             i, row = row[0], row[1:]
             vicinity_list = [cv if (i, cj) not in d.detected_cells else self.IGNORE_SIGN for cj, cv in enumerate(row)]
             for j, value in enumerate(row):

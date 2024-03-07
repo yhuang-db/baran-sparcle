@@ -20,8 +20,9 @@ def do_eval(data, eval_attrs, output_file):
     eval_stat = []
 
     for attr in eval_attrs:
-        sql_null = f"SELECT count(1) FROM df_eval WHERE {attr} is null"
-        sql_wrong = f"SELECT count(1) FROM df_eval WHERE {attr} is not null AND {attr} <> {attr}_gt"
+        print(f"evaluating {attr}")
+        sql_null = f"SELECT count(1) FROM df_eval WHERE {attr} = ''"
+        sql_wrong = f"SELECT count(1) FROM df_eval WHERE {attr} <> '' AND {attr} <> {attr}_gt"
         attr_null_count = duckdb.query(sql_null).fetchone()[0]
         attr_wrong_count = duckdb.query(sql_wrong).fetchone()[0]
 

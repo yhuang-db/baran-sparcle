@@ -11,3 +11,4 @@ psycopg2
 geoalchemy2
 duckdb
 sqlalchemy==1.4.52
+tqdm

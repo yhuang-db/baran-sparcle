@@ -58,4 +58,4 @@ if __name__ == "__main__":
         end = time.perf_counter()
         runtime = time.strftime("%Hh%Mm%Ss", time.gmtime(end - start))
         output_file = f'{dataset_dictionary["name"]}_eval_{counter}_{runtime}.csv'
-        do_eval(data, data.dataframe.columns[2:-1].to_list(), output_file)
+        do_eval(data, data.dataframe.columns[1:-1].to_list(), output_file)
