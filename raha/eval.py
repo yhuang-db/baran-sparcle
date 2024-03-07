@@ -9,7 +9,7 @@ def do_eval(data, eval_attrs, output_file):
 
     column_rename = ", ".join([f"t1.{attr} as {attr}, t2.{attr} as {attr}_gt, t3.{attr} as {attr}_repair" for attr in eval_attrs])
 
-    sql = f'select t1.id, t1.x, t1.y, {column_rename} from df_raw t1, df_clean t2, df_repair t3 where t1.id = t2.id and t1.id = t3.id'
+    sql = f'select t1.id, t1.xy, {column_rename} from df_raw t1, df_clean t2, df_repair t3 where t1.id = t2.id and t1.id = t3.id'
     df_eval = duckdb.query(sql).to_df()
 
     null_count = 0

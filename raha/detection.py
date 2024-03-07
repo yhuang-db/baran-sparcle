@@ -40,7 +40,7 @@ import sklearn.feature_extraction
 
 import raha
 ########################################
-
+from raha.correction import combine_xy
 
 ########################################
 class Detection:
@@ -389,6 +389,7 @@ class Detection:
                   "---------------------Initializing the Dataset Object--------------------\n"
                   "------------------------------------------------------------------------")
         d = self.initialize_dataset(dd)
+        combine_xy(d)
         if self.VERBOSE:
             print("------------------------------------------------------------------------\n"
                   "-------------------Running Error Detection Strategies-------------------\n"
