@@ -1,3 +1,11 @@
+# Sparcle: Boosting the Accuracy of Data Cleaning Systems through Spatial Awareness
+
+This is an implementation of Sparcle ideas in side Baran system (Raha 1.25). 
+
+The implementation is in branch "[sparcle](https://github.com/yhuang-db/baran-sparcle/tree/sparcle)", in file [raha/correction.py](https://github.com/yhuang-db/baran-sparcle/blob/sparcle/raha/correction.py#).
+
+---
+
 # Raha and Her Younger Sister Baran
 Detecting and correcting erroneous values are key steps in data cleaning. Error detection/correction systems usually require a user to provide input configurations in the form of integrity constraints or statistical parameters. However, providing a complete, yet correct, set of configurations for each new dataset is tedious and error-prone, as the user has to know about both the dataset and the data cleaning system upfront.
 
